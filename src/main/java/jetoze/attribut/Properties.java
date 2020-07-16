@@ -28,23 +28,26 @@ public class Properties {
         }
 
         @Override
-        public T get() {
+        public synchronized T get() {
             return value;
         }
 
         @Override
         public void set(T value) {
             requireNonNull(value);
-            if (value == this.value) {
-                return;
+            T old;
+            synchronized (this) {
+                if (value == this.value) {
+                    return;
+                }
+                old = this.value;
+                this.value = value;
             }
-            T old = this.value;
-            this.value = value;
             changeSupport.firePropertyChange(name, old, value);
         }
 
         @Override
-        public void setSilently(T value) {
+        public synchronized void setSilently(T value) {
             this.value = requireNonNull(value);
         }
 
