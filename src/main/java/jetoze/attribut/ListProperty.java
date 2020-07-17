@@ -5,6 +5,7 @@ import java.util.List;
 
 public interface ListProperty<T> extends Property<List<T>> {
     
+    // TODO: Define this when the property is created and remove this setter.
     void setDoDefensiveCopy(boolean value);
 
     void clear();
