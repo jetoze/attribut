@@ -4,6 +4,9 @@ import java.beans.PropertyChangeListener;
 
 public interface Property<T> {
 
+    // TODO: Decouple from java.beans.PropertyChangeListener? Use our own listener, 
+    // with typed (<T>) new and old values?
+    
     String name();
     
     T get();
