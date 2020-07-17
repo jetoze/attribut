@@ -10,24 +10,34 @@ import java.util.Comparator;
 import java.util.List;
 
 public class Properties {
-
+    
     public static <T> Property<T> newProperty(String name, T value) {
-        return new PropertyImpl<>(name, value);
+        return newProperty(name, value, new PropertyChangeSupport(Properties.class));
+    }
+
+    public static <T> Property<T> newProperty(String name, T value, PropertyChangeSupport changeSupport) {
+        return new PropertyImpl<>(name, value, changeSupport);
     }
     
     public static <T> ListProperty<T> newListProperty(String name, List<T> value) {
-        return new ListPropertyImpl<>(name, value);
+        return newListProperty(name, value, new PropertyChangeSupport(Properties.class));
     }
+    
+    public static <T> ListProperty<T> newListProperty(String name, List<T> value, PropertyChangeSupport changeSupport) {
+        return new ListPropertyImpl<>(name, value, changeSupport);
+    }
+    
     
     private static class PropertyImpl<T> implements Property<T> {
         private final String name;
         private T value;
-        private final PropertyChangeSupport changeSupport = new PropertyChangeSupport(this);
+        private final PropertyChangeSupport changeSupport;
         
-        public PropertyImpl(String name, T value) {
+        public PropertyImpl(String name, T value, PropertyChangeSupport changeSupport) {
             checkArgument(!name.isBlank(), "name cannot be blank");
             this.name = name;
             this.value = requireNonNull(value);
+            this.changeSupport = requireNonNull(changeSupport);
         }
         
         @Override
@@ -81,8 +91,8 @@ public class Properties {
         private final PropertyImpl<List<T>> impl;
         private volatile boolean doDefensiveCopy = true;
 
-        public ListPropertyImpl(String name, List<T> value) {
-            this.impl = new PropertyImpl<>(name, value);
+        public ListPropertyImpl(String name, List<T> value, PropertyChangeSupport changeSupport) {
+            this.impl = new PropertyImpl<>(name, value, changeSupport);
         }
 
         @Override
