@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
+import com.google.common.collect.ImmutableList;
+
 public class Properties {
     
     public static <T> Property<T> newProperty(String name, T value) {
@@ -88,11 +90,10 @@ public class Properties {
     
     
     private static class ListPropertyImpl<T> implements ListProperty<T> {
-        private final PropertyImpl<List<T>> impl;
-        private volatile boolean doDefensiveCopy = true;
+        private final PropertyImpl<ImmutableList<T>> impl;
 
         public ListPropertyImpl(String name, List<T> value, PropertyChangeSupport changeSupport) {
-            this.impl = new PropertyImpl<>(name, value, changeSupport);
+            this.impl = new PropertyImpl<>(name, ImmutableList.copyOf(value), changeSupport);
         }
 
         @Override
@@ -101,42 +102,32 @@ public class Properties {
         }
 
         @Override
-        public List<T> get() {
-            return valueToUse(impl.get());
-        }
-
-        private List<T> valueToUse(List<T> value) {
-            return doDefensiveCopy
-                    ? new ArrayList<>(value)
-                    : value;
+        public ImmutableList<T> get() {
+            return impl.get();
         }
         
         @Override
         public void set(List<T> value) {
-            List<T> valueToUse = valueToUse(value);
-            impl.set(valueToUse);
+            impl.set(ImmutableList.copyOf(value));
         }
 
         @Override
         public void setSilently(List<T> value) {
-            impl.setSilently(value);
-        }
-
-        @Override
-        public void setDoDefensiveCopy(boolean value) {
-            this.doDefensiveCopy = value;
+            impl.setSilently(ImmutableList.copyOf(value));
         }
 
         @Override
         public void clear() {
-            impl.set(new ArrayList<>());
+            impl.set(ImmutableList.of());
         }
         
         @Override
         public void sort(Comparator<? super T> comparator) {
             requireNonNull(comparator);
             synchronized (this) {
-                impl.get().sort(comparator);
+                ArrayList<T> copy = new ArrayList<>(impl.get());
+                copy.sort(comparator);
+                impl.set(ImmutableList.copyOf(copy));
             }
             impl.sendChangeEvent();
         }
