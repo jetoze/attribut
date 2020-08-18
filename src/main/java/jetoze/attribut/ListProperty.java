@@ -9,6 +9,8 @@ public interface ListProperty<T> extends Property<List<T>> {
 
     ImmutableList<T> get();
     
+    boolean isEmpty();
+    
     void clear();
     
     void sort(Comparator<? super T> comparator);

@@ -18,7 +18,23 @@ public class Properties {
     }
 
     public static <T> Property<T> newProperty(String name, T value, PropertyChangeSupport changeSupport) {
-        return new PropertyImpl<>(name, value, changeSupport);
+        return new PropertyImpl<>(name, false, value, changeSupport);
+    }
+    
+    public static <T> Property<T> newNullableProperty(String name) {
+        return newNullableProperty(name, null, new PropertyChangeSupport(Properties.class));
+    }
+    
+    public static <T> Property<T> newNullableProperty(String name, PropertyChangeSupport changeSupport) {
+        return newNullableProperty(name, null, changeSupport);
+    }
+    
+    public static <T> Property<T> newNullableProperty(String name, T value) {
+        return newNullableProperty(name, value, new PropertyChangeSupport(Properties.class));
+    }
+
+    public static <T> Property<T> newNullableProperty(String name, T value, PropertyChangeSupport changeSupport) {
+        return new PropertyImpl<>(name, true, value, changeSupport);
     }
     
     public static <T> ListProperty<T> newListProperty(String name, List<T> value) {
@@ -30,15 +46,21 @@ public class Properties {
     }
     
     
+    // TODO: It would be nice if a nullable property could return an Optional<T>. 
     private static class PropertyImpl<T> implements Property<T> {
         private final String name;
+        private final boolean allowNull;
         private T value;
         private final PropertyChangeSupport changeSupport;
         
-        public PropertyImpl(String name, T value, PropertyChangeSupport changeSupport) {
+        public PropertyImpl(String name, boolean allowNull, T value, PropertyChangeSupport changeSupport) {
             checkArgument(!name.isBlank(), "name cannot be blank");
             this.name = name;
-            this.value = requireNonNull(value);
+            this.allowNull = allowNull;
+            if (!allowNull) {
+                requireNonNull(value);
+            }
+            this.value = value;
             this.changeSupport = requireNonNull(changeSupport);
         }
         
@@ -54,7 +76,9 @@ public class Properties {
 
         @Override
         public void set(T value) {
-            requireNonNull(value);
+            if (!allowNull) {
+                requireNonNull(value);
+            }
             T old;
             synchronized (this) {
                 if (value == this.value) {
@@ -68,7 +92,10 @@ public class Properties {
 
         @Override
         public synchronized void setSilently(T value) {
-            this.value = requireNonNull(value);
+            if (!allowNull) {
+                requireNonNull(value);
+            }
+            this.value = value;
         }
 
         @Override
@@ -93,7 +120,7 @@ public class Properties {
         private final PropertyImpl<ImmutableList<T>> impl;
 
         public ListPropertyImpl(String name, List<T> value, PropertyChangeSupport changeSupport) {
-            this.impl = new PropertyImpl<>(name, ImmutableList.copyOf(value), changeSupport);
+            this.impl = new PropertyImpl<>(name, false, ImmutableList.copyOf(value), changeSupport);
         }
 
         @Override
@@ -106,6 +133,11 @@ public class Properties {
             return impl.get();
         }
         
+        @Override
+        public boolean isEmpty() {
+            return impl.get().isEmpty();
+        }
+
         @Override
         public void set(List<T> value) {
             impl.set(ImmutableList.copyOf(value));
